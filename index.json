@@ -1,5 +1,15 @@
 [
   {
+    "name": "firefishyu.jpg",
+    "path": "files/1773576603197-firefishyu.jpg",
+    "size": 34558,
+    "type": "image/jpeg",
+    "sha": "5ad97ae9ad62fb1d008cef52ab7fada76b741928",
+    "cdnUrl": "https://cdn.jsdelivr.net/gh/123456789oil/pan@main/files/1773576603197-firefishyu.jpg",
+    "githubUrl": "https://raw.githubusercontent.com/123456789oil/pan/main/files/1773576603197-firefishyu.jpg",
+    "uploadedAt": "2026-03-15T12:10:04.412Z"
+  },
+  {
     "name": "wx_camera_1772371905474.jpg",
     "path": "files/1772534604209-wx_camera_1772371905474.jpg",
     "size": 833834,
