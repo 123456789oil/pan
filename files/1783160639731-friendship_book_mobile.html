@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>友谊纪念书 - 专属定制</title>
+    <link rel="icon" href="https://creation.bcmcdn.com/716/luna/file_nfr93dqs_1772459375.jpg" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+    <style type="text/tailwindcss">
+        @layer base {
+            body {
+                font-family: 'Noto Sans SC', sans-serif;
+                background: #e8e4df;
+                -webkit-tap-highlight-color: transparent;
+            }
+            .font-serif-sc {
+                font-family: 'Noto Serif SC', serif;
+            }
+        }
+        @layer components {
+            .book-page {
+                width: 210mm;
+                height: 297mm;
+                background: white;
+                box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+                position: relative;
+                overflow: hidden;
+                page-break-after: always;
+                page-break-inside: avoid;
+                flex-shrink: 0;
+            }
+            @media print {
+                body { background: white; margin: 0; padding: 0; }
+                .no-print { display: none !important; }
+                .mobile-ui { display: none !important; }
+                .book-page {
+                    box-shadow: none;
+                    margin: 0;
+                    page-break-after: always;
+                }
+            }
+            .gold-accent { color: #c9a86c; }
+            .gold-bg { background-color: #c9a86c; }
+            .gold-border { border-color: #c9a86c; }
+            .gold-line {
+                height: 1px;
+                background: linear-gradient(90deg, transparent, #c9a86c, transparent);
+            }
+            .handwrite-area {
+                background: repeating-linear-gradient(
+                    transparent,
+                    transparent 28px,
+                    #f0ebe3 28px,
+                    #f0ebe3 29px
+                );
+                border: 1px solid #e5dfd6;
+                border-radius: 8px;
+            }
+            .corner-deco {
+                position: absolute;
+                width: 40px;
+                height: 40px;
+                border: 1.5px solid #c9a86c;
+                opacity: 0.4;
+            }
+            .corner-tl { top: 20px; left: 20px; border-right: none; border-bottom: none; }
+            .corner-tr { top: 20px; right: 20px; border-left: none; border-bottom: none; }
+            .corner-bl { bottom: 20px; left: 20px; border-right: none; border-top: none; }
+            .corner-br { bottom: 20px; right: 20px; border-left: none; border-top: none; }
+            .stamp-circle {
+                width: 80px;
+                height: 80px;
+                border: 2px solid #c9a86c;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #c9a86c;
+                font-family: 'Noto Serif SC', serif;
+                font-size: 12px;
+                transform: rotate(-15deg);
+                opacity: 0.6;
+            }
+            .section-label {
+                display: inline-block;
+                padding: 2px 12px;
+                background: #f5f0e8;
+                border-radius: 4px;
+                font-size: 11px;
+                color: #8a7e6e;
+                letter-spacing: 2px;
+                margin-bottom: 8px;
+            }
+            .dashed-line {
+                border-bottom: 1px dashed #d4cfc7;
+                min-height: 32px;
+                display: flex;
+                align-items: center;
+                padding: 0 4px;
+            }
+            .dashed-textarea {
+                background: repeating-linear-gradient(
+                    transparent,
+                    transparent 28px,
+                    #f5f0e8 28px,
+                    #f5f0e8 29px
+                );
+                border: 1px dashed #d4cfc7;
+                border-radius: 6px;
+                min-height: 100px;
+                padding: 8px;
+                font-size: 13px;
+                line-height: 29px;
+                color: #5a5248;
+            }
+            /* 手机端预览折叠 */
+            .preview-collapsed {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.4s ease-out;
+            }
+            .preview-expanded {
+                max-height: 2000px;
+                overflow: visible;
+                transition: max-height 0.6s ease-in;
+            }
+            .preview-toggle-btn {
+                transition: transform 0.3s ease;
+            }
+            .preview-toggle-btn.rotated {
+                transform: rotate(180deg);
+            }
+            /* 底部编辑面板 */
+            .bottom-sheet {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                border-radius: 20px 20px 0 0;
+                box-shadow: 0 -4px 24px rgba(0,0,0,0.1);
+                z-index: 50;
+                max-height: 70vh;
+                overflow-y: auto;
+                transition: transform 0.3s ease;
+            }
+            .bottom-sheet.collapsed {
+                transform: translateY(calc(100% - 56px));
+            }
+            .sheet-handle {
+                width: 40px;
+                height: 4px;
+                background: #d4cfc7;
+                border-radius: 2px;
+                margin: 8px auto;
+            }
+            /* 加载动画 */
+            .loading-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 100;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s;
+            }
+            .loading-overlay.active {
+                opacity: 1;
+                pointer-events: auto;
+            }
+            .spinner {
+                width: 48px;
+                height: 48px;
+                border: 3px solid #f0ebe3;
+                border-top-color: #c9a86c;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-24">
+    <!-- 顶部导航栏 -->
+    <div class="no-print fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md border-b border-stone-200 z-50 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img src="https://creation.bcmcdn.com/716/luna/file_nfr93dqs_1772459375.jpg" alt="logo" class="w-8 h-8 rounded-full object-cover border border-stone-200">
+                <h1 class="text-base font-semibold text-stone-800">友谊纪念书</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="togglePreview()" class="md:hidden px-3 py-2 bg-stone-100 text-stone-600 text-sm rounded-lg flex items-center gap-1">
+                    <span id="previewBtnText">预览</span>
+                    <svg id="previewBtnIcon" class="w-4 h-4 preview-toggle-btn" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <button onclick="showExportMenu()" class="px-3 py-2 gold-bg text-white text-sm rounded-lg flex items-center gap-1 shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    <span class="hidden sm:inline">导出</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导出菜单弹窗 -->
+    <div id="exportMenu" class="fixed inset-0 bg-black/50 z-[60] hidden items-end sm:items-center justify-center" onclick="hideExportMenu(event)">
+        <div class="bg-white w-full sm:w-80 sm:rounded-2xl rounded-t-2xl p-6 space-y-3" onclick="event.stopPropagation()">
+            <div class="w-12 h-1 bg-stone-200 rounded-full mx-auto mb-4 sm:hidden"></div>
+            <h3 class="text-lg font-semibold text-stone-800 mb-4">导出纪念书</h3>
+            <button onclick="exportPDF()" class="w-full py-3 bg-stone-800 text-white rounded-xl flex items-center justify-center gap-2 hover:bg-stone-700 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                生成 PDF 文档
+            </button>
+            <button onclick="window.print()" class="w-full py-3 bg-stone-100 text-stone-700 rounded-xl flex items-center justify-center gap-2 hover:bg-stone-200 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                系统打印 / 保存PDF
+            </button>
+            <button onclick="hideExportMenu()" class="w-full py-3 text-stone-400 text-sm">取消</button>
+        </div>
+    </div>
+
+    <!-- 加载动画 -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="text-center">
+            <div class="spinner mx-auto mb-4"></div>
+            <p class="text-white text-sm" id="loadingText">正在生成 PDF...</p>
+        </div>
+    </div>
+
+    <!-- 预览区域（手机端默认折叠） -->
+    <div id="previewArea" class="pt-16 px-2 sm:px-4 flex justify-center preview-collapsed md:preview-expanded">
+        <div id="bookContainer" class="space-y-4 scale-[0.35] sm:scale-[0.5] md:scale-100 origin-top transition-transform"></div>
+    </div>
+
+    <!-- 手机端底部编辑面板 -->
+    <div id="bottomSheet" class="bottom-sheet collapsed md:hidden">
+        <div class="sheet-handle" onclick="toggleSheet()"></div>
+        <div class="px-5 pb-6 pt-2" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-semibold text-stone-700 flex items-center gap-2">
+                    <svg class="w-4 h-4 gold-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    编辑纪念书
+                </h3>
+                <button onclick="toggleSheet()" class="text-stone-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+            </div>
+            <div class="space-y-3 text-sm" id="mobileForm"></div>
+        </div>
+    </div>
+
+    <!-- 电脑端右侧编辑面板 -->
+    <div class="no-print fixed right-4 top-20 w-72 bg-white rounded-xl shadow-xl border border-stone-200 p-5 z-40 max-h-[calc(100vh-100px)] overflow-y-auto hidden md:block">
+        <h3 class="text-sm font-semibold text-stone-700 mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 gold-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            编辑纪念书信息
+        </h3>
+        <div class="space-y-3 text-sm" id="desktopForm"></div>
+    </div>
+
+    <script>
+        const fields = [
+            { id: 'bookTitle', label: '书名', value: '友谊纪念书' },
+            { id: 'myName', label: '你的姓名', value: 'XXX' },
+            { id: 'friendName', label: '好友姓名', value: 'XXX' },
+            { id: 'meetDate', label: '相识日期', value: '2020年9月1日' },
+            { id: 'meetPlace', label: '相识地点', value: '大学校园' },
+            { id: 'memDate', label: '纪念日期', value: '2026年6月' },
+            { id: 'innerQuote', label: '里封引言', value: '"有些人，一旦遇见，便一眼万年；有些心动，一旦开始，便覆水难收。"', textarea: true },
+            { id: 'endingText', label: '尾封寄语', value: '愿我们的友谊，经得起时间的考验，抵得过岁月的流逝。无论未来如何，你都是我生命中最珍贵的存在。', textarea: true }
+        ];
+
+        function renderForms() {
+            const formHtml = fields.map(f => `
+                <div>
+                    <label class="text-xs text-stone-500 mb-1 block">${f.label}</label>
+                    ${f.textarea 
+                        ? `<textarea id="${f.id}" rows="2" class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:border-stone-500 resize-none text-xs" oninput="updateBook()">${f.value}</textarea>`
+                        : `<input type="text" id="${f.id}" value="${f.value}" class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:border-stone-500" oninput="updateBook()">`
+                    }
+                </div>
+            `).join('');
+
+            document.getElementById('desktopForm').innerHTML = formHtml + `
+                <div class="mt-4 pt-3 border-t border-stone-200 text-xs text-stone-500">
+                    <p>💡 打印后让好友手写填写内容</p>
+                    <p>✏️ 虚线区域为手写区</p>
+                </div>
+            `;
+            document.getElementById('mobileForm').innerHTML = formHtml;
+        }
+
+        let previewExpanded = false;
+
+        function togglePreview() {
+            previewExpanded = !previewExpanded;
+            const area = document.getElementById('previewArea');
+            const icon = document.getElementById('previewBtnIcon');
+            const text = document.getElementById('previewBtnText');
+
+            if (previewExpanded) {
+                area.classList.remove('preview-collapsed');
+                area.classList.add('preview-expanded');
+                icon.classList.add('rotated');
+                text.textContent = '收起';
+                // 滚动到预览区
+                setTimeout(() => area.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+            } else {
+                area.classList.remove('preview-expanded');
+                area.classList.add('preview-collapsed');
+                icon.classList.remove('rotated');
+                text.textContent = '预览';
+            }
+        }
+
+        let sheetExpanded = false;
+
+        function toggleSheet() {
+            sheetExpanded = !sheetExpanded;
+            const sheet = document.getElementById('bottomSheet');
+            if (sheetExpanded) {
+                sheet.classList.remove('collapsed');
+            } else {
+                sheet.classList.add('collapsed');
+            }
+        }
+
+        function showExportMenu() {
+            document.getElementById('exportMenu').classList.remove('hidden');
+            document.getElementById('exportMenu').classList.add('flex');
+        }
+
+        function hideExportMenu(e) {
+            if (e && e.target !== e.currentTarget) return;
+            document.getElementById('exportMenu').classList.add('hidden');
+            document.getElementById('exportMenu').classList.remove('flex');
+        }
+
+        async function exportPDF() {
+            hideExportMenu();
+            const loading = document.getElementById('loadingOverlay');
+            const loadingText = document.getElementById('loadingText');
+            loading.classList.add('active');
+
+            try {
+                // 先展开预览
+                const area = document.getElementById('previewArea');
+                area.classList.remove('preview-collapsed');
+                area.classList.add('preview-expanded');
+
+                // 等待渲染
+                await new Promise(r => setTimeout(r, 500));
+
+                const { jsPDF } = window.jspdf;
+                const pages = document.querySelectorAll('.book-page');
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                for (let i = 0; i < pages.length; i++) {
+                    loadingText.textContent = `正在生成第 ${i+1}/${pages.length} 页...`;
+
+                    const canvas = await html2canvas(pages[i], {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff'
+                    });
+
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+                    if (i > 0) pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                }
+
+                const myName = document.getElementById('myName').value;
+                const friendName = document.getElementById('friendName').value;
+                pdf.save(`友谊纪念书_${myName}_致_${friendName}.pdf`);
+
+            } catch (err) {
+                alert('生成PDF失败，请使用系统打印功能：' + err.message);
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        function updateBook() {
+            const title = document.getElementById('bookTitle').value;
+            const myName = document.getElementById('myName').value;
+            const friendName = document.getElementById('friendName').value;
+            const meetDate = document.getElementById('meetDate').value;
+            const meetPlace = document.getElementById('meetPlace').value;
+            const memDate = document.getElementById('memDate').value;
+            const innerQuote = document.getElementById('innerQuote').value;
+            const endingText = document.getElementById('endingText').value;
+
+            const container = document.getElementById('bookContainer');
+
+            let html = '';
+
+            // 第1页：封面
+            html += `
+                <div class="book-page flex flex-col justify-between p-0" style="background: linear-gradient(160deg, #faf8f5 0%, #f0ebe3 50%, #e8e2d8 100%);">
+                    <div class="h-3 gold-bg w-full opacity-80"></div>
+                    <div class="flex-1 flex flex-col justify-center items-center px-16 relative">
+                        <div class="corner-deco corner-tl"></div>
+                        <div class="corner-deco corner-tr"></div>
+                        <div class="corner-deco corner-bl"></div>
+                        <div class="corner-deco corner-br"></div>
+                        <div class="mb-10">
+                            <div class="w-28 h-28 rounded-full border-2 border-stone-300 flex items-center justify-center relative">
+                                <div class="absolute inset-2 rounded-full border border-stone-200"></div>
+                                <div class="text-center">
+                                    <div class="text-3xl font-serif-sc font-bold text-stone-700">友</div>
+                                    <div class="text-xs text-stone-400 mt-1 tracking-widest">FRIENDSHIP</div>
+                                </div>
+                            </div>
+                        </div>
+                        <h1 class="font-serif-sc text-5xl font-bold text-stone-800 mb-3 tracking-widest">${title}</h1>
+                        <div class="gold-line w-40 mb-6"></div>
+                        <p class="text-stone-500 text-sm tracking-[0.3em] mb-12">致 · ${friendName}</p>
+                        <div class="absolute bottom-20 left-16 right-16">
+                            <div class="flex justify-between items-end text-stone-400 text-xs">
+                                <div class="space-y-1">
+                                    <div>赠书人：${myName}</div>
+                                    <div>相识于：${meetDate}</div>
+                                </div>
+                                <div class="text-right space-y-1">
+                                    <div>${memDate}</div>
+                                    <div>谨以此书 · 纪念我们的友谊</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="h-3 gold-bg w-full opacity-80"></div>
+                </div>
+            `;
+
+            // 第2页：里封
+            html += `
+                <div class="book-page flex flex-col p-16 relative" style="background: #fefefe;">
+                    <div class="corner-deco corner-tl"></div>
+                    <div class="corner-deco corner-tr"></div>
+                    <div class="corner-deco corner-bl"></div>
+                    <div class="corner-deco corner-br"></div>
+                    <div class="flex-1 flex flex-col justify-center items-center text-center">
+                        <div class="mb-8">
+                            <svg class="w-12 h-12 gold-accent opacity-60 mx-auto" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                        </div>
+                        <div class="max-w-md">
+                            <p class="font-serif-sc text-lg text-stone-600 leading-loose italic mb-10">${innerQuote}</p>
+                        </div>
+                        <div class="gold-line w-24 mb-10"></div>
+                        <div class="space-y-4 text-sm text-stone-500">
+                            <div class="flex items-center gap-3 justify-center">
+                                <span class="w-20 text-right text-stone-400">赠书人</span>
+                                <span class="w-px h-4 bg-stone-300"></span>
+                                <span class="w-32 text-left font-medium text-stone-700">${myName}</span>
+                            </div>
+                            <div class="flex items-center gap-3 justify-center">
+                                <span class="w-20 text-right text-stone-400">收书人</span>
+                                <span class="w-px h-4 bg-stone-300"></span>
+                                <span class="w-32 text-left font-medium text-stone-700">${friendName}</span>
+                            </div>
+                            <div class="flex items-center gap-3 justify-center">
+                                <span class="w-20 text-right text-stone-400">相识时间</span>
+                                <span class="w-px h-4 bg-stone-300"></span>
+                                <span class="w-32 text-left">${meetDate}</span>
+                            </div>
+                            <div class="flex items-center gap-3 justify-center">
+                                <span class="w-20 text-right text-stone-400">相识地点</span>
+                                <span class="w-px h-4 bg-stone-300"></span>
+                                <span class="w-32 text-left">${meetPlace}</span>
+                            </div>
+                        </div>
+                        <div class="mt-16 stamp-circle mx-auto">
+                            <div class="text-center leading-tight">
+                                <div>友谊</div>
+                                <div>长存</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 text-stone-300 text-xs tracking-widest">02</div>
+                </div>
+            `;
+
+            // 第3页：印象对比
+            html += `
+                <div class="book-page p-12 flex flex-col relative" style="background: #fefefe;">
+                    <div class="corner-deco corner-tl" style="width:30px;height:30px;"></div>
+                    <div class="corner-deco corner-tr" style="width:30px;height:30px;"></div>
+                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-stone-100">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 gold-bg rounded-full flex items-center justify-center text-white text-xs">1</div>
+                            <span class="text-sm font-medium text-stone-600">印象与评价</span>
+                        </div>
+                        <span class="text-xs text-stone-300">${friendName} · 填写</span>
+                    </div>
+                    <div class="flex-1 space-y-5">
+                        <div>
+                            <div class="section-label">FIRST IMPRESSION</div>
+                            <div class="text-xs text-stone-400 mb-2">还记得第一次见到${myName}时的感觉吗？</div>
+                            <div class="dashed-textarea" contenteditable="false">
+                                <span class="text-stone-300 italic">（请在此处手写填写你对我的第一印象...）</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-label">NOW IMPRESSION</div>
+                            <div class="text-xs text-stone-400 mb-2">现在的${myName}给你什么样的感觉？</div>
+                            <div class="dashed-textarea" contenteditable="false">
+                                <span class="text-stone-300 italic">（请在此处手写填写你对我的现印象...）</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-label">OVERALL EVALUATION</div>
+                            <div class="text-xs text-stone-400 mb-2">用几个词或一句话评价一下${myName}吧</div>
+                            <div class="dashed-textarea" style="min-height:80px;" contenteditable="false">
+                                <span class="text-stone-300 italic">（请在此处手写填写你的评价...）</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-label">THREE KEYWORDS</div>
+                            <div class="text-xs text-stone-400 mb-2">用三个词形容${myName}</div>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div class="dashed-line justify-center text-stone-300 italic text-sm">词 1</div>
+                                <div class="dashed-line justify-center text-stone-300 italic text-sm">词 2</div>
+                                <div class="dashed-line justify-center text-stone-300 italic text-sm">词 3</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 text-stone-300 text-xs tracking-widest">03</div>
+                </div>
+            `;
+
+            // 第4页：喜好猜测
+            html += `
+                <div class="book-page p-12 flex flex-col relative" style="background: #fefefe;">
+                    <div class="corner-deco corner-tl" style="width:30px;height:30px;"></div>
+                    <div class="corner-deco corner-tr" style="width:30px;height:30px;"></div>
+                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-stone-100">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 gold-bg rounded-full flex items-center justify-center text-white text-xs">2</div>
+                            <span class="text-sm font-medium text-stone-600">你了解我吗</span>
+                        </div>
+                        <span class="text-xs text-stone-300">${friendName} · 填写</span>
+                    </div>
+                    <div class="flex-1 space-y-5">
+                        <div>
+                            <div class="section-label">FAVORITE FOOD</div>
+                            <div class="text-xs text-stone-400 mb-2">猜猜${myName}最喜欢吃什么？</div>
+                            <div class="dashed-textarea" style="min-height:60px;" contenteditable="false">
+                                <span class="text-stone-300 italic">（食物名称及原因...）</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-label">FAVORITE COLOR</div>
+                            <div class="text-xs text-stone-400 mb-2">猜猜${myName}最喜欢什么颜色？</div>
+                            <div class="dashed-textarea" style="min-height:60px;" contenteditable="false">
+                                <span class="text-stone-300 italic">（颜色及原因...）</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-label">FAVORITE THINGS</div>
+                            <div class="text-xs text-stone-400 mb-2">猜猜${myName}最喜欢的玩具或物品是什么？</div>
+                            <div class="dashed-textarea" style="min-height:60px;" contenteditable="false">
+                                <span class="text-stone-300 italic">（物品名称及原因...）</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-label">FAVORITE ENTERTAINMENT</div>
+                            <div class="text-xs text-stone-400 mb-2">猜猜${myName}最喜欢的歌/电影/书？</div>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div>
+                                    <div class="text-xs text-stone-400 mb-1 text-center">歌曲</div>
+                                    <div class="dashed-line justify-center text-stone-300 italic text-xs">?</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-stone-400 mb-1 text-center">电影</div>
+                                    <div class="dashed-line justify-center text-stone-300 italic text-xs">?</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-stone-400 mb-1 text-center">书籍</div>
+                                    <div class="dashed-line justify-center text-stone-300 italic text-xs">?</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-label">MY SECRET</div>
+                            <div class="text-xs text-stone-400 mb-2">你觉得${myName}有什么不为人知的小秘密或习惯？</div>
+                            <div class="dashed-textarea" style="min-height:60px;" contenteditable="false">
+                                <span class="text-stone-300 italic">（悄悄写下来...）</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 text-stone-300 text-xs tracking-widest">04</div>
+                </div>
+            `;
+
+            // 第5页：回忆与寄语 + 签名
+            html += `
+                <div class="book-page p-12 flex flex-col relative" style="background: #fefefe;">
+                    <div class="corner-deco corner-tl" style="width:30px;height:30px;"></div>
+                    <div class="corner-deco corner-tr" style="width:30px;height:30px;"></div>
+                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-stone-100">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 gold-bg rounded-full flex items-center justify-center text-white text-xs">3</div>
+                            <span class="text-sm font-medium text-stone-600">回忆与寄语</span>
+                        </div>
+                        <span class="text-xs text-stone-300">${friendName} · 填写</span>
+                    </div>
+                    <div class="flex-1 space-y-5">
+                        <div>
+                            <div class="section-label">BEST MEMORY</div>
+                            <div class="text-xs text-stone-400 mb-2">你和${myName}之间最难忘的一件事是什么？</div>
+                            <div class="dashed-textarea" style="min-height:120px;" contenteditable="false">
+                                <span class="text-stone-300 italic">（请写下你们之间最珍贵的回忆...）</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-label">WORDS FOR YOU</div>
+                            <div class="text-xs text-stone-400 mb-2">有什么话一直想对${myName}说却没说出口？</div>
+                            <div class="dashed-textarea" style="min-height:120px;" contenteditable="false">
+                                <span class="text-stone-300 italic">（写下你想对我说的话...）</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-label">FUTURE PROMISE</div>
+                            <div class="text-xs text-stone-400 mb-2">想和未来${myName}一起完成什么事？</div>
+                            <div class="dashed-textarea" style="min-height:80px;" contenteditable="false">
+                                <span class="text-stone-300 italic">（我们的未来约定...）</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-dashed border-stone-200">
+                            <div class="flex justify-between items-end">
+                                <div class="space-y-3">
+                                    <div class="section-label">SIGNATURE</div>
+                                    <div class="text-xs text-stone-400">好友签名</div>
+                                    <div class="w-48 h-16 border-b-2 border-dashed border-stone-300 flex items-end justify-center pb-2">
+                                        <span class="text-stone-300 italic text-sm">${friendName}</span>
+                                    </div>
+                                    <div class="text-xs text-stone-300">日期：__________</div>
+                                </div>
+                                <div class="stamp-circle" style="width:60px;height:60px;font-size:10px;">
+                                    <div class="text-center leading-tight">
+                                        <div>已阅</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 text-stone-300 text-xs tracking-widest">05</div>
+                </div>
+            `;
+
+            // 第6页：尾封
+            html += `
+                <div class="book-page flex flex-col justify-between p-0" style="background: linear-gradient(160deg, #e8e2d8 0%, #f0ebe3 50%, #faf8f5 100%);">
+                    <div class="h-3 gold-bg w-full opacity-80"></div>
+                    <div class="flex-1 flex flex-col justify-center items-center px-16 relative">
+                        <div class="corner-deco corner-tl"></div>
+                        <div class="corner-deco corner-tr"></div>
+                        <div class="corner-deco corner-bl"></div>
+                        <div class="corner-deco corner-br"></div>
+                        <div class="mb-8">
+                            <svg class="w-10 h-10 gold-accent opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                        </div>
+                        <h2 class="font-serif-sc text-3xl font-bold text-stone-800 mb-4 tracking-widest">致友谊</h2>
+                        <div class="gold-line w-24 mb-8"></div>
+                        <div class="max-w-sm text-center">
+                            <p class="text-stone-600 leading-loose text-sm font-light">${endingText}</p>
+                        </div>
+                        <div class="mt-12 flex items-center gap-8 text-stone-400 text-xs">
+                            <div class="text-center">
+                                <div class="w-12 h-12 rounded-full border border-stone-300 flex items-center justify-center mb-2 mx-auto text-stone-500">${myName.charAt(0)}</div>
+                                <div>${myName}</div>
+                            </div>
+                            <div class="text-stone-300">×</div>
+                            <div class="text-center">
+                                <div class="w-12 h-12 rounded-full border border-stone-300 flex items-center justify-center mb-2 mx-auto text-stone-500">${friendName.charAt(0)}</div>
+                                <div>${friendName}</div>
+                            </div>
+                        </div>
+                        <div class="mt-12 text-stone-400 text-xs tracking-widest">${memDate}</div>
+                        <div class="absolute bottom-16 right-16 stamp-circle" style="opacity:0.4;">
+                            <div class="text-center leading-tight">
+                                <div>友谊</div>
+                                <div>纪念</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="h-3 gold-bg w-full opacity-80"></div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // 初始化
+        renderForms();
+        updateBook();
+
+        // 手机端默认折叠预览
+        if (window.innerWidth < 768) {
+            document.getElementById('previewArea').classList.add('preview-collapsed');
+            document.getElementById('previewArea').classList.remove('preview-expanded');
+        }
+    </script>
+</body>
+</html>
