@@ -1,5 +1,15 @@
 [
   {
+    "name": "update(1).sh",
+    "path": "files/1783960045264-update_1_.sh",
+    "size": 4100,
+    "type": "text/x-sh",
+    "sha": "2d053e6f7f2f8bf66c82255f5356b4a1b040030f",
+    "cdnUrl": "https://cdn.jsdelivr.net/gh/123456789oil/pan@main/files/1783960045264-update_1_.sh",
+    "githubUrl": "https://raw.githubusercontent.com/123456789oil/pan/main/files/1783960045264-update_1_.sh",
+    "uploadedAt": "2026-07-13T16:27:26.010Z"
+  },
+  {
     "name": "friendship_book_mobile.html",
     "path": "files/1783160639731-friendship_book_mobile.html",
     "size": 39861,
