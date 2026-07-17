@@ -1,5 +1,15 @@
 [
   {
+    "name": "cloudreve.apk",
+    "path": "files/1784303337202-cloudreve.apk",
+    "size": 6651773,
+    "type": "application/vnd.android.package-archive",
+    "sha": "90d9c722f43508897c5acbd72dab3fd90c89dc88",
+    "cdnUrl": "https://cdn.jsdelivr.net/gh/123456789oil/pan@main/files/1784303337202-cloudreve.apk",
+    "githubUrl": "https://raw.githubusercontent.com/123456789oil/pan/main/files/1784303337202-cloudreve.apk",
+    "uploadedAt": "2026-07-17T15:49:01.230Z"
+  },
+  {
     "name": "update(1).sh",
     "path": "files/1783960045264-update_1_.sh",
     "size": 4100,
