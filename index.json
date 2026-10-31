@@ -1,5 +1,15 @@
 [
   {
+    "name": "BaiduPCS-Go-v3.9.7-linux-amd64.zip",
+    "path": "files/1793460872036-BaiduPCS-Go-v3.9.7-linux-amd64.zip",
+    "size": 4780672,
+    "type": "application/x-zip-compressed",
+    "sha": "5287c40d0e0813e6c869d8f50af9db45144e637d",
+    "cdnUrl": "https://cdn.jsdelivr.net/gh/123456789oil/pan@main/files/1793460872036-BaiduPCS-Go-v3.9.7-linux-amd64.zip",
+    "githubUrl": "https://raw.githubusercontent.com/123456789oil/pan/main/files/1793460872036-BaiduPCS-Go-v3.9.7-linux-amd64.zip",
+    "uploadedAt": "2026-10-31T15:34:34.861Z"
+  },
+  {
     "name": "1790260887595_edit_247372013751527.png",
     "path": "files/1790261579553-1790260887595_edit_247372013751527.png",
     "size": 6253127,
